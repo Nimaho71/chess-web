@@ -660,12 +660,17 @@ function show_infobox() { /* suppressed */ }
         p1 = false; p2 = false;   // AI vs AI
       }
 
-      // Pass config to Python via window globals
-      window.CHESS_P1    = p1;
-      window.CHESS_P2    = p2;
-      window.CHESS_READY = true;
+      // Strings are unambiguous across the JS→Python bridge
+      window.CHESS_P1    = p1 ? "1" : "0";
+      window.CHESS_P2    = p2 ? "1" : "0";
+      window.CHESS_READY = "1";
 
-      // Fade out entire overlay to reveal the Pygame canvas
+      // Deactivate all screens — removes pointer-events:all so clicks reach canvas
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.remove('exit');
+      });
+
       const overlay = document.getElementById('ui-overlay');
       overlay.classList.add('hidden');
     }
