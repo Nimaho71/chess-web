@@ -569,7 +569,7 @@ function show_infobox() { /* suppressed */ }
       pctEl.textContent  = s.pct + '%';
       statEl.textContent = s.msg;
       if (s.pct < 100) {
-        setTimeout(runStep, 320 + Math.random() * 480);
+        setTimeout(runStep, 80 + Math.random() * 120);
       } else {
         fakeProgDone = true;
         maybeShowMode();
@@ -596,7 +596,7 @@ function show_infobox() { /* suppressed */ }
       }
     }
 
-    setTimeout(runStep,  800);
+    setTimeout(runStep,  200);
     setTimeout(pollEngine, 500);
 
     /* ── Screen transitions ──────────────────────────────────────────── */
@@ -673,12 +673,37 @@ function show_infobox() { /* suppressed */ }
 
       const overlay = document.getElementById('ui-overlay');
       overlay.classList.add('hidden');
+      startPollReset();   // watch for Python R-key reset signal
+    }
+
+    /* ── Reset poll (runs while game is active, responds to Python R key) ── */
+    let _resetTimer = null;
+    function startPollReset() {
+      clearInterval(_resetTimer);
+      _resetTimer = setInterval(() => {
+        try {
+          if (window.CHESS_RESET === "1") {
+            window.CHESS_RESET = "0";
+            clearInterval(_resetTimer);
+            const overlay = document.getElementById('ui-overlay');
+            overlay.classList.remove('hidden');
+            selectedMode = null; selectedSide = null;
+            showScreen('screen-mode');
+          }
+        } catch(e) {}
+      }, 200);
     }
 
     /* ── Keyboard ────────────────────────────────────────────────────── */
     document.addEventListener('keydown', e => {
       if (e.key.toUpperCase() === 'R') {
-        window.location.reload();
+        const overlay = document.getElementById('ui-overlay');
+        if (!overlay.classList.contains('hidden')) {
+          // In menus: go back to mode screen
+          flashTransition(() => showScreen('screen-mode'));
+          selectedMode = null; selectedSide = null;
+        }
+        // In game: Python handles K_r, sets CHESS_RESET, pollReset picks it up
       }
     });
 
