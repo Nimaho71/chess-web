@@ -3,15 +3,7 @@
 print("""
 Loading chess-web from chess-web.apk
     Pygbag Version : 0.9.3
-    Template Version : 0.9.3
     Python  : 3.12
-    CDN URL : https://pygame-web.github.io/cdn/0.9.3/
-    Screen  : 1280x720
-    Title   : chess-web
-    Folder  : chess-web
-    Authors : pgw
-    SPDX-License-Identifier: cookiecutter.spdx
-
 """)
 
 import sys
@@ -20,24 +12,17 @@ import platform
 import json
 from pathlib import Path
 
-# do not rename
 async def custom_site():
     import embed
-    platform.document.body.style.background = "#7f7f7f"
-
+    platform.document.body.style.background = "#0e0d0b"
     platform.window.transfer.hidden = true
     platform.window.canvas.style.visibility = "visible"
 
-
     bundle = "chess-web"
-
-    # the C or js loader could do that but be explicit.
-    appdir = Path(f"/data/data/{bundle}") # /data/data/chess-web
+    appdir = Path(f"/data/data/{bundle}")
     appdir.mkdir()
 
-
-    # unpack filesystem from compressed archive into work dir
-    if platform.window.location.host.find('.itch.zone')>0:
+    if platform.window.location.host.find('.itch.zone') > 0:
         import zipfile
         async with platform.fopen("chess-web.apk", "rb") as archive:
             with zipfile.ZipFile(archive) as zip_ref:
@@ -49,390 +34,655 @@ async def custom_site():
             tar.extractall(path=appdir.as_posix(), filter='tar')
             tar.close()
 
-    # preloader will change to work dir and prepend it to sys.path
-    platform.run_main(PyConfig, loaderhome= appdir / "assets", loadermain=None)
+    platform.run_main(PyConfig, loaderhome=appdir / "assets", loadermain=None)
 
-
-    # wait preloading complete : that includes images and wasm compilation of bundled modules
-    while embed.counter()<0:
+    while embed.counter() < 0:
         await asyncio.sleep(.1)
 
     main = appdir / "assets" / "main.py"
 
-    # TODO: test for window.webkitAudioContext and block aio loop until gesture if accessing media manager play
-    # before a gesture is recorded ( touch or click )
+    # Hide infobox — HTML UI handles all loading feedback
+    platform.window.infobox.style.display = "none"
 
-    # test/wait user media interaction
-    if not platform.window.MM.UME:
+    # Skip UME wait entirely — user gesture comes from HTML "Begin" button
+    # which satisfies browser autoplay policy when the canvas is shown
 
-        # now that apk is mounted we have access to font cache
-        # but we need to fill __file__ that is not yet set
-        __import__(__name__).__file__ = main
-
-        # now make a prompt
-        msg  = "Ready to start ! Please click/touch page"
-        platform.window.infobox.innerText = msg
-        print("\n"*4, f"    * Waiting for media user engagement. {msg} *" , "\n"*4)
-
-        while not platform.window.MM.UME:
-            await asyncio.sleep(.1)
-
-    # start async top level machinery if not started and add a console in any case if requested.
     await TopLevel_async_handler.start_toplevel(platform.shell, console=window.python.config.debug)
 
-    # now that apk is mounted we have access to font cache
-    # but we need to fill __file__/__name__ that are not yet set
     __import__(__name__).__file__ = main
 
-
     def ui_callback(pkg):
-        platform.window.infobox.innerText = f"installing {pkg}"
+        platform.window.infobox.style.display = "none"
 
     await shell.source(main, callback=ui_callback)
-
-    # if you don't reach that step
-    # your main.py has an infinite sync loop somewhere !
 
     platform.window.infobox.style.display = "none"
     platform.window.config.gui_divider = 1
     platform.window.window_resize()
-    print("default.tmpl: done")
 
     shell.interactive()
 
-asyncio.run( custom_site() )
-
-
-
-
-
-
-
-
-
-
-
+asyncio.run(custom_site())
 
 # BEGIN BLOCK
 #
-# now this is the html part you can (and should) customize
-# It is not mandatory : pygame-script when it reads the first line (also called
-# shebang ) of above code create absolute minimal widget set
-# required for running with default rules
+# HTML section below — customised for chess UI overlay
 #
-# do not alter that comment block it is separating python code from html code
 # =============================================================================
 # --></script><head><!--
 //=============================================================================
-//
-//
-//
-//
-//
-//
-//
-
-    {%- if cookiecutter.comment != "" -%}
-{{cookiecutter.comment}}
-    {% endif %}
-
 --><script type="application/javascript">
 // END BLOCK
 
-
-
-// this dict is available under PyConfig.config from __main__
-
 config = {
-    xtermjs : "1" ,
+    xtermjs : "1",
     _sdl2 : "canvas",
     user_canvas : 0,
     user_canvas_managed : 0,
     gui_divider : 2,
-    ume_block : 1,
+    ume_block : 0,
     can_close : 0,
     archive : "chess-web",
     gui_debug : 2,
     cdn : "https://pygame-web.github.io/cdn/0.9.3/",
     autorun : 0,
     PYBUILD : "3.12",
-    fb_ar   :  1.77,
+    fb_ar : 1.77,
     fb_width : "1280",
     fb_height : "720"
 }
 
-function show_infobox() {
-    infobox.style.display = "block";
-
-    // Measure box
-    const w = infobox.offsetWidth;
-    const h = infobox.offsetHeight;
-
-    // Center in viewport
-    const left = (window.innerWidth - w) / 2;
-    const top = (window.innerHeight - h) / 2;
-
-    infobox.style.left = left + "px";
-    infobox.style.top = top + "px";
-}
+function show_infobox() { /* suppressed */ }
 
 </script>
 
-    <title>chess-web</title>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="viewport" content="height=device-height, initial-scale=1.0">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>Chess</title>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
 
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    <link rel="icon" type="image/png" href="favicon.png" sizes="16x16">
+    :root {
+      --cream: #f0ebe1; --cream-dim: #c8bfad;
+      --dark: #0e0d0b;  --dark2: #161410;
+      --accent: #c9a84c; --accent-dim: #8a6e2f;
+      --border: rgba(201,168,76,0.2);
+    }
 
-    <style>
-        #status {
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 20px;
-            margin-left: 30px;
-            font-weight: bold;
-            color: rgb(120, 120, 120);
-        }
+    html, body { width:100%; height:100%; background:var(--dark);
+      font-family:'Inter',sans-serif; color:var(--cream); overflow:hidden; }
 
-        #progress {
-            height: 20px;
-            width: 300px;
-        }
+    /* ── Pygbag canvas ── */
+    canvas.emscripten {
+      border:0; background:transparent;
+      width:100%; height:100%; z-index:1;
+      padding:0; margin:0 auto;
+      position:absolute; top:0; bottom:0; left:0; right:0;
+    }
+    body { font-family:arial; margin:0; padding:0; background:#0e0d0b; }
 
-        #infobox {
-            position: fixed; /* center relative to viewport */
-            background: green;
-            color: blue;
-            font-weight: bold;
-            padding: 12px 24px;
- /*           display: none; */
-            z-index: 999999;
-        }
-        div.emscripten { text-align: center; }
-        div.emscripten_border { border: 1px solid black; }
-        div.thick_border { border: 4px solid black; }
+    /* ── UI overlay ── */
+    #ui-overlay {
+      position:fixed; inset:0; z-index:20;
+      transition:opacity 0.7s ease;
+    }
+    #ui-overlay.hidden { opacity:0; pointer-events:none; }
 
-        /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-        /* average size of droid screen 470dp x 320dp  */
-        canvas.emscripten {
-            border: 0px none;
-            background-color: transparent;
-            width: 100%;
-            height: 100%;
-            z-index: 5;
+    .screen {
+      position:fixed; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; pointer-events:none;
+      transition:opacity 0.5s ease;
+      z-index:21;
+    }
+    .screen.active { opacity:1; pointer-events:all; }
+    .screen.exit   { opacity:0; pointer-events:none; transition:opacity 0.35s ease; }
 
-            padding: 0;
-            margin: 0 auto;
+    /* ── Ambient board background ── */
+    .board-bg { position:fixed; inset:0; z-index:0; overflow:hidden; }
+    .board-bg::before {
+      content:''; position:absolute; inset:-20%;
+      background-image:
+        linear-gradient(rgba(14,13,11,0.82) 0%, rgba(14,13,11,0.5) 50%, rgba(14,13,11,0.88) 100%),
+        url('chessboard.png');
+      background-size:cover; background-position:center 20%;
+      filter:blur(2px) grayscale(30%); transform:scale(1.05);
+      animation:slowZoom 30s ease-in-out infinite alternate;
+    }
+    @keyframes slowZoom { from{transform:scale(1.05)} to{transform:scale(1.12)} }
 
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            right: 0;
-        }
+    .grid-overlay {
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+      background-image:
+        linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+      background-size:60px 60px;
+    }
+    .noise {
+      position:fixed; inset:0; z-index:0; pointer-events:none; opacity:0.03;
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size:200px 200px;
+    }
+    .flash { position:fixed; inset:0; z-index:100; background:var(--cream); opacity:0; pointer-events:none; }
 
-        body {
-            font-family: arial;
-            margin: 0;
-            padding: none;
-            background-color:powderblue;
-        }
+    /* ── Loading screen ── */
+    #screen-loading { flex-direction:column; gap:0; }
+    .loading-inner { display:flex; flex-direction:column; align-items:center; gap:48px; }
+    .logo-block { display:flex; flex-direction:column; align-items:center; gap:12px; }
+    .logo-mark { width:64px; height:64px; animation:rotateMark 8s linear infinite; }
+    .logo-mark svg { width:100%; height:100%; }
+    @keyframes rotateMark { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .logo-title { font-family:'Cormorant Garamond',serif; font-size:clamp(52px,8vw,88px);
+      font-weight:300; letter-spacing:0.28em; color:var(--cream); text-transform:uppercase; line-height:1; }
+    .logo-subtitle { font-size:10px; letter-spacing:0.4em; text-transform:uppercase;
+      color:var(--accent); font-weight:400; opacity:0.8; }
+    .spinner-wrap { display:flex; flex-direction:column; align-items:center; gap:24px; }
+    .spinner-ring { width:56px; height:56px; position:relative; }
+    .spinner-ring svg { width:100%; height:100%; animation:spinRing 2s linear infinite; }
+    @keyframes spinRing { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .spinner-ring .track { fill:none; stroke:rgba(201,168,76,0.12); stroke-width:2; }
+    .spinner-ring .arc { fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round;
+      stroke-dasharray:90 270; animation:arcPulse 2s ease-in-out infinite; }
+    @keyframes arcPulse {
+      0%,100%{stroke-dasharray:60 300;opacity:0.6}
+      50%{stroke-dasharray:140 220;opacity:1}
+    }
+    .loading-status { font-size:11px; letter-spacing:0.25em; text-transform:uppercase;
+      color:var(--cream-dim); font-weight:300; min-width:200px; text-align:center; }
+    .progress-bar-wrap { width:240px; display:flex; flex-direction:column; gap:8px; }
+    .progress-track { width:100%; height:1px; background:rgba(201,168,76,0.15);
+      border-radius:1px; overflow:hidden; position:relative; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent-dim),var(--accent));
+      border-radius:1px; width:0%; transition:width 0.3s ease; position:relative; }
+    .progress-fill::after { content:''; position:absolute; right:0; top:-2px;
+      width:4px; height:5px; background:var(--accent); border-radius:2px;
+      box-shadow:0 0 8px var(--accent); }
+    .progress-pct { font-size:10px; letter-spacing:0.2em; color:var(--accent);
+      text-align:right; font-variant-numeric:tabular-nums; }
 
-        .topright{
-           position:absolute;
-           top:0px;
-           right:0px;
-        }
+    /* ── Mode screen ── */
+    #screen-mode { flex-direction:column; align-items:center; justify-content:center; }
+    .mode-inner { display:flex; flex-direction:column; align-items:center;
+      gap:52px; width:100%; max-width:440px; padding:24px 20px; }
+    .mode-header { display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .mode-eyebrow { font-size:10px; letter-spacing:0.45em; text-transform:uppercase;
+      color:var(--accent); opacity:0.85; }
+    .mode-title { font-family:'Cormorant Garamond',serif; font-size:clamp(36px,6vw,64px);
+      font-weight:300; letter-spacing:0.18em; text-transform:uppercase;
+      color:var(--cream); text-align:center; }
+    .divider { width:40px; height:1px; background:var(--accent); opacity:0.5; margin:0 auto; }
+    .mode-buttons { display:flex; flex-direction:column; gap:14px; width:100%; }
+    .mode-btn { position:relative; background:transparent;
+      border:1px solid rgba(201,168,76,0.25); border-radius:2px;
+      padding:18px 32px; width:100%; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between;
+      transition:all 0.3s ease; overflow:hidden; text-align:left; color:var(--cream); }
+    .mode-btn::before { content:''; position:absolute; inset:0;
+      background:linear-gradient(90deg,rgba(201,168,76,0.06) 0%,transparent 100%);
+      opacity:0; transition:opacity 0.3s ease; }
+    .mode-btn:hover { border-color:rgba(201,168,76,0.6); transform:translateX(4px); }
+    .mode-btn:hover::before { opacity:1; }
+    .mode-btn:active { transform:translateX(2px) scale(0.99); }
+    .mode-btn-left { display:flex; align-items:center; gap:18px; }
+    .mode-btn-icon { font-size:22px; line-height:1; opacity:0.85; }
+    .mode-btn-text { display:flex; flex-direction:column; gap:3px; }
+    .mode-btn-label { font-family:'Cormorant Garamond',serif; font-size:20px;
+      font-weight:600; letter-spacing:0.06em; color:var(--cream); line-height:1; }
+    .mode-btn-desc { font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--cream-dim); opacity:0.6; }
+    .mode-btn-arrow { font-size:16px; color:var(--accent); opacity:0;
+      transform:translateX(-6px); transition:all 0.3s ease; }
+    .mode-btn:hover .mode-btn-arrow { opacity:1; transform:translateX(0); }
+    .hotkeys { display:flex; gap:20px; flex-wrap:wrap; justify-content:center; }
+    .hk { display:flex; align-items:center; gap:7px; }
+    .hk-key { display:inline-flex; align-items:center; justify-content:center;
+      width:22px; height:22px; border:1px solid rgba(201,168,76,0.35);
+      border-radius:3px; font-size:10px; font-weight:500; color:var(--accent);
+      background:rgba(201,168,76,0.05); font-family:'Inter',sans-serif; }
+    .hk-label { font-size:10px; letter-spacing:0.15em; text-transform:uppercase;
+      color:var(--cream-dim); opacity:0.5; }
 
-        .bottomright {
-            position:absolute;
-            top: 40%;
-            right: 0px;
-        }
+    /* ── Side screen ── */
+    #screen-side { flex-direction:column; align-items:center; justify-content:center; }
+    .side-inner { display:flex; flex-direction:column; align-items:center;
+      gap:48px; width:100%; max-width:480px; padding:24px 20px; }
+    .side-header { display:flex; flex-direction:column; align-items:center; gap:10px; }
+    .back-btn { display:flex; align-items:center; gap:8px; background:none;
+      border:none; cursor:pointer; color:var(--cream-dim); opacity:0.5;
+      font-size:10px; letter-spacing:0.25em; text-transform:uppercase;
+      transition:opacity 0.2s; font-family:'Inter',sans-serif; margin-bottom:4px; }
+    .back-btn:hover { opacity:1; }
+    .side-eyebrow { font-size:10px; letter-spacing:0.45em; text-transform:uppercase;
+      color:var(--accent); opacity:0.85; }
+    .side-title { font-family:'Cormorant Garamond',serif; font-size:clamp(30px,5vw,52px);
+      font-weight:300; letter-spacing:0.18em; text-transform:uppercase;
+      color:var(--cream); text-align:center; }
+    .side-cards { display:flex; gap:20px; width:100%; flex-wrap:wrap; justify-content:center; }
+    .side-card { flex:1; min-width:160px; max-width:200px; background:transparent;
+      border:1px solid rgba(201,168,76,0.2); border-radius:2px;
+      padding:32px 20px 28px; cursor:pointer;
+      display:flex; flex-direction:column; align-items:center; gap:18px;
+      transition:all 0.35s ease; position:relative; overflow:hidden; color:var(--cream); }
+    .side-card::before { content:''; position:absolute; inset:0; opacity:0; transition:opacity 0.3s; }
+    .side-card.white-card::before { background:radial-gradient(ellipse at 50% 0%,rgba(240,235,225,0.08) 0%,transparent 70%); }
+    .side-card.black-card::before { background:radial-gradient(ellipse at 50% 0%,rgba(201,168,76,0.07) 0%,transparent 70%); }
+    .side-card:hover { border-color:rgba(201,168,76,0.55); transform:translateY(-3px); }
+    .side-card:hover::before { opacity:1; }
+    .side-card:active { transform:translateY(-1px); }
+    .side-piece { font-size:64px; line-height:1; transition:transform 0.35s ease; }
+    .side-card:hover .side-piece { transform:scale(1.08) translateY(-2px); }
+    .side-card-label { font-family:'Cormorant Garamond',serif; font-size:22px;
+      font-weight:600; letter-spacing:0.1em; text-transform:uppercase; }
+    .side-card-sub { font-size:9px; letter-spacing:0.3em; text-transform:uppercase;
+      color:var(--cream-dim); opacity:0.45; }
+    .side-hint { font-size:10px; letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--cream-dim); opacity:0.35; text-align:center; }
 
-        .center {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    /* ── Ready screen ── */
+    #screen-ready { flex-direction:column; align-items:center; justify-content:center; }
+    .ready-inner { display:flex; flex-direction:column; align-items:center;
+      gap:40px; padding:24px 20px; width:100%; max-width:400px; }
+    .ready-icon { font-size:56px; line-height:1; }
+    .ready-title { font-family:'Cormorant Garamond',serif; font-size:clamp(28px,5vw,46px);
+      font-weight:300; letter-spacing:0.2em; text-transform:uppercase;
+      color:var(--cream); text-align:center; }
+    .ready-detail { font-size:11px; letter-spacing:0.22em; text-transform:uppercase;
+      color:var(--cream-dim); opacity:0.5; text-align:center; line-height:1.8; }
+    .start-btn { background:var(--accent); border:none; border-radius:2px;
+      padding:16px 48px; font-family:'Cormorant Garamond',serif;
+      font-size:16px; font-weight:600; letter-spacing:0.25em; text-transform:uppercase;
+      color:var(--dark); cursor:pointer; transition:all 0.25s ease; }
+    .start-btn:hover { background:#d4b05a; transform:translateY(-1px);
+      box-shadow:0 8px 24px rgba(201,168,76,0.25); }
+    .start-btn:active { transform:translateY(0); }
 
-        .trinfo{
-           position: relative;
-           right: 0px;
-           border: 1px solid black;
-        }
+    /* ── Corner ornaments ── */
+    .corner { position:fixed; pointer-events:none; z-index:25; }
+    .corner svg { display:block; }
+    .corner-tl { top:24px; left:24px; }
+    .corner-tr { top:24px; right:24px; transform:scaleX(-1); }
+    .corner-bl { bottom:24px; left:24px; transform:scaleY(-1); }
+    .corner-br { bottom:24px; right:24px; transform:scale(-1); }
 
-        .framed{
-           position: relative;
-           top: 150px;
-           right: 10px;
-           border: 1px solid black;
-        }
-    </style>
+    /* ── Pygbag hidden chrome ── */
+    #status   { display:none; }
+    #progress { display:none; }
+    #transfer { display:none; }
+    #infobox  { display:none !important; }
+    #pyconsole{ display:none; }
+    #system   { display:none; }
+    #crt      { display:none; }
+  </style>
 
-    <script>
-/*
-        if (navigator.serviceWorker)
-            navigator.serviceWorker.register("https://pygame-web.github.io/cdn/0.9.3/pygbag0.9.3.js")
-        else
-            console.warn("Service workers not supported")
-*/
-    </script>
-
-    <script src="https://pygame-web.github.io/cdn/0.9.3//browserfs.min.js"></script>
-
+  <script src="https://pygame-web.github.io/cdn/0.9.3//browserfs.min.js"></script>
 </head>
 
 <body>
 
-    <div id="transfer" align=center>
-<!--        <div class="spinner" id='spinner'></div> -->
-        <div class="emscripten" id="status">Downloading...</div>
-        <div class="emscripten">
-            <progress value="0" max="100" id="progress"></progress>
+  <!-- ── Pygbag required (hidden) ────────────────────────────────────── -->
+  <div id="transfer" align=center hidden>
+    <div class="emscripten" id="status">Downloading...</div>
+    <div class="emscripten"><progress value="0" max="100" id="progress"></progress></div>
+  </div>
+
+  <canvas class="emscripten" id="canvas"
+    width="1px" height="1px"
+    oncontextmenu="event.preventDefault()" tabindex=1></canvas>
+
+  <canvas class="emscripten" id="canvas3d"
+    width="1280px" height="720px"
+    oncontextmenu="event.preventDefault()" tabindex=1 hidden></canvas>
+
+  <div id="infobox" style="display:none"></div>
+  <div id="html"></div>
+
+  <div id="crt" style="display:none">
+    <div id="system" hidden>
+      <div class="button-container">
+        <button id="aiostop" disabled>AIO ⏏︎</button>
+        <button id="aiopaused_true" disabled>AIO ■</button>
+        <button id="aiopaused_false" disabled>AIO ▶</button>
+        <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+      </div>
+      <div class="button-container">
+        <div id=load_min>min</div><div id=load_avg>avg</div><div id=load_max>max</div>
+        <button id="load_rst" disabled>RESET</button>
+      </div>
+      <div id="level">(battery level unknown)</div>
+      <div id="stateBattery">(charging state unknown)</div>
+    </div>
+    <div id=box class="emscripten_border" hidden=true>
+      <div id="info" class="trinfo"></div>
+      <iframe id="iframe" class="framed" name="iframe"
+        width="470px" height="90%" allowtransparency="true"
+        style="z-index:10;background:#FFF;" frameborder="1"
+        allowfullscreen="true" webkitallowfullscreen="true"
+        msallowfullscreen="true" mozallowfullscreen="true"
+        sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
+        allow="autoplay;fullscreen *;geolocation;microphone;camera;midi;monetization;xr-spatial-tracking;gamepad;gyroscope;accelerometer;xr;cross-origin-isolated"
+        src="https://pygame-web.github.io/cdn/0.9.3/empty.html" scrolling="yes">
+      </iframe>
+    </div>
+  </div>
+
+  <div id="dlg" hidden>
+    <input type="file" id="dlg_multifile" multiple accept="image/*">
+    <label for="dlg_multifile">Select files</label>
+  </div>
+
+  <div id="pyconsole" style="display:none">
+    <div id="terminal" tabIndex=1 align="left"></div>
+  </div>
+
+  <!-- ── Beautiful UI overlay ─────────────────────────────────────────── -->
+  <div id="ui-overlay">
+    <div class="board-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="noise"></div>
+    <div class="flash" id="flash"></div>
+
+    <!-- Corner ornaments -->
+    <div class="corner corner-tl"><svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M1 31 L1 1 L31 1" stroke="rgba(201,168,76,0.35)" stroke-width="1"/></svg></div>
+    <div class="corner corner-tr"><svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M1 31 L1 1 L31 1" stroke="rgba(201,168,76,0.35)" stroke-width="1"/></svg></div>
+    <div class="corner corner-bl"><svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M1 31 L1 1 L31 1" stroke="rgba(201,168,76,0.35)" stroke-width="1"/></svg></div>
+    <div class="corner corner-br"><svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <path d="M1 31 L1 1 L31 1" stroke="rgba(201,168,76,0.35)" stroke-width="1"/></svg></div>
+
+    <!-- Loading screen -->
+    <div class="screen active" id="screen-loading">
+      <div class="loading-inner">
+        <div class="logo-block">
+          <div class="logo-mark">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="32" cy="32" r="30" stroke="rgba(201,168,76,0.15)" stroke-width="1"/>
+              <circle cx="32" cy="32" r="30" stroke="rgba(201,168,76,0.5)" stroke-width="1"
+                stroke-dasharray="8 12" stroke-linecap="round"/>
+              <g transform="translate(20,14) scale(0.37)">
+                <path d="M32 4 L32 16 M26 10 L38 10" stroke="rgba(201,168,76,0.9)" stroke-width="3.5" stroke-linecap="round"/>
+                <path d="M8 20 L14 40 L50 40 L56 20 L44 28 L32 16 L20 28 Z"
+                  stroke="rgba(201,168,76,0.9)" stroke-width="2.5" fill="none" stroke-linejoin="round"/>
+                <rect x="12" y="40" width="40" height="7" rx="1" stroke="rgba(201,168,76,0.9)" stroke-width="2.5" fill="none"/>
+              </g>
+            </svg>
+          </div>
+          <h1 class="logo-title">Chess</h1>
+          <p class="logo-subtitle" id="loading-subtitle">Initializing</p>
         </div>
+        <div class="spinner-wrap">
+          <div class="spinner-ring">
+            <svg viewBox="0 0 56 56">
+              <circle class="track" cx="28" cy="28" r="24"/>
+              <circle class="arc"   cx="28" cy="28" r="24"/>
+            </svg>
+          </div>
+          <p class="loading-status" id="loading-status">Preparing board...</p>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-pct" id="progress-pct">0%</div>
+        </div>
+      </div>
     </div>
 
-
-
-    <canvas class="emscripten" id="canvas"
-width="1px"
-height="1px"
-    oncontextmenu="event.preventDefault()" tabindex=1>
-    </canvas>
-
-    <canvas class="emscripten" id="canvas3d"
-width="1280px"
-height="720px"
-    oncontextmenu="event.preventDefault()" tabindex=1 hidden>
-    </canvas>
-
-    <div id="infobox">Loading, please wait ...</div>
-
-    <div id=html></div>
-
-    <div id=crt  class=bottomright >
-
-        <div id="system" hidden>
-            <div class="button-container">
-                <button id="aiostop" disabled>AIO ⏏︎</button>
-                <button id="aiopaused_true" disabled>AIO ■</button>
-                <button id="aiopaused_false" disabled>AIO ▶</button>
-                <button id="pygame_mixer_music_pause" disabled>Music ■</button>
+    <!-- Mode screen -->
+    <div class="screen" id="screen-mode">
+      <div class="mode-inner">
+        <div class="mode-header">
+          <span class="mode-eyebrow">Select Mode</span>
+          <h2 class="mode-title">Chess</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="mode-buttons">
+          <button class="mode-btn" onclick="selectMode('hva')">
+            <div class="mode-btn-left">
+              <span class="mode-btn-icon">♟</span>
+              <div class="mode-btn-text">
+                <span class="mode-btn-label">Human vs AI</span>
+                <span class="mode-btn-desc">Play against the engine</span>
+              </div>
             </div>
-
-            <div class="button-container">
-                <div id=load_min>min</div>
-                <div id=load_avg>avg</div>
-                <div id=load_max>max</div>
-              <button id="load_rst" disabled>RESET</button>
+            <span class="mode-btn-arrow">→</span>
+          </button>
+          <button class="mode-btn" onclick="selectMode('hvh')">
+            <div class="mode-btn-left">
+              <span class="mode-btn-icon">♞</span>
+              <div class="mode-btn-text">
+                <span class="mode-btn-label">Human vs Human</span>
+                <span class="mode-btn-desc">Local two-player game</span>
+              </div>
             </div>
-
-            <div id="level">(battery level unknown)</div>
-            <div id="stateBattery">(charging state unknown)</div>
-
+            <span class="mode-btn-arrow">→</span>
+          </button>
+          <button class="mode-btn" onclick="selectMode('ava')">
+            <div class="mode-btn-left">
+              <span class="mode-btn-icon">♜</span>
+              <div class="mode-btn-text">
+                <span class="mode-btn-label">AI vs AI</span>
+                <span class="mode-btn-desc">Watch the engine play itself</span>
+              </div>
+            </div>
+            <span class="mode-btn-arrow">→</span>
+          </button>
         </div>
-
-        <div id=box class="emscripten_border" hidden=true>
-
-            <div id="info" class="trinfo"></div>
-
-            <iframe id="iframe" class="framed" name="iframe"
-width="470px" height="90%"
-allowtransparency="true"
-style="z-index: 10;"
-style="background: #FFFFFF;"
-frameborder="1"
-                allowfullscreen="true"
-                webkitallowfullscreen="true"
-                msallowfullscreen="true"
-                mozallowfullscreen="true"
-                sandbox="allow-same-origin allow-top-navigation allow-scripts allow-pointer-lock"
-                allow="autoplay; fullscreen *; geolocation; microphone; camera; midi; monetization; xr-spatial-tracking; gamepad; gyroscope; accelerometer; xr; cross-origin-isolated"
-                src="https://pygame-web.github.io/cdn/0.9.3/empty.html"
-                scrolling="yes">
-            </iframe>
+        <div class="hotkeys">
+          <div class="hk"><span class="hk-key">U</span><span class="hk-label">Undo</span></div>
+          <div class="hk"><span class="hk-key">R</span><span class="hk-label">Restart</span></div>
+          <div class="hk"><span class="hk-key">A</span><span class="hk-label">Animation</span></div>
         </div>
-
+      </div>
     </div>
 
-
-    <div id="dlg" hidden>
-        <input type="file" id="dlg_multifile" multiple accept="image/*">
-        <label for="dlg_multifile">Select files</label>
+    <!-- Side screen -->
+    <div class="screen" id="screen-side">
+      <div class="side-inner">
+        <div class="side-header">
+          <button class="back-btn" onclick="goBack()">← Back</button>
+          <span class="side-eyebrow">Human vs AI</span>
+          <h2 class="side-title">Choose Your Side</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="side-cards">
+          <div class="side-card white-card" onclick="selectSide('white')">
+            <span class="side-piece">♔</span>
+            <span class="side-card-label">White</span>
+            <span class="side-card-sub">First move</span>
+          </div>
+          <div class="side-card black-card" onclick="selectSide('black')">
+            <span class="side-piece" style="filter:invert(0.85) contrast(1.2);">♚</span>
+            <span class="side-card-label">Black</span>
+            <span class="side-card-sub">Second move</span>
+          </div>
+        </div>
+        <p class="side-hint">White always moves first</p>
+      </div>
     </div>
 
-    <div id="pyconsole">
-        <div id="terminal" tabIndex=1 align="left"></div>
+    <!-- Ready screen -->
+    <div class="screen" id="screen-ready">
+      <div class="ready-inner">
+        <div class="ready-icon" id="ready-icon">♔</div>
+        <h2 class="ready-title" id="ready-title">Ready</h2>
+        <p class="ready-detail" id="ready-detail">Human vs AI · White pieces</p>
+        <button class="start-btn" onclick="startGame()">Begin</button>
+      </div>
     </div>
+  </div><!-- /#ui-overlay -->
 
-    <script type="application/javascript">
+  <script type="application/javascript">
 
-    globalThis.__canvas_resized = (self, ecw, ech) => {
-        console.warn("TODO: panda3d canvas monitor", self, ecw, ech)
-    }
+    /* ── Pygbag hook functions ─────────────────────────────────────── */
+    globalThis.__canvas_resized = (self, ecw, ech) => {}
 
     async function custom_onload(debug_hidden) {
-        // this is called before anything python is loaded
-        // make your js customization here
-        console.log(__FILE__, "custom_onload")
+      pyconsole.hidden = true;
+      system.hidden    = true;
+      transfer.hidden  = true;
+      info.hidden      = true;
+      box.hidden       = true;
+      infobox.style.display = 'none';
+      // Do NOT call show_infobox() — our UI handles loading display
+    }
+    function custom_prerun()  {}
+    function custom_postrun() {}
+    function debug() {}
+    function info_inline(data) { document.getElementById('info').innerHTML = data; }
 
-        pyconsole.hidden = debug_hidden
-        system.hidden = debug_hidden
-        transfer.hidden = debug_hidden
-        info.hidden = debug_hidden
-        box.hidden =  debug_hidden
+    /* ── State ───────────────────────────────────────────────────────── */
+    let selectedMode = null;
+    let selectedSide = null;
+    let engineReady  = false;
+    let fakeProgDone = false;
 
-        show_infobox()
+    /* ── Loading progress (fake + real engine sync) ──────────────────── */
+    const STEPS = [
+      { pct:12,  msg:'Preparing board...' },
+      { pct:28,  msg:'Loading piece assets...' },
+      { pct:44,  msg:'Initializing engine...' },
+      { pct:61,  msg:'Calibrating AI depth...' },
+      { pct:78,  msg:'Mapping legal moves...' },
+      { pct:90,  msg:'Running sanity checks...' },
+      { pct:100, msg:'All systems ready.' },
+    ];
+    let stepIdx = 0;
+    const fillEl = document.getElementById('progress-fill');
+    const pctEl  = document.getElementById('progress-pct');
+    const statEl = document.getElementById('loading-status');
+    const subEl  = document.getElementById('loading-subtitle');
+
+    function runStep() {
+      if (stepIdx >= STEPS.length) return;
+      const s = STEPS[stepIdx++];
+      fillEl.style.width = s.pct + '%';
+      pctEl.textContent  = s.pct + '%';
+      statEl.textContent = s.msg;
+      if (s.pct < 100) {
+        setTimeout(runStep, 320 + Math.random() * 480);
+      } else {
+        fakeProgDone = true;
+        maybeShowMode();
+      }
     }
 
-    function custom_prerun(){
-        // no python main and no (MEMFS + VFS) yet.
-        console.log(__FILE__, "custom_prerun")
-
+    function maybeShowMode() {
+      if (!fakeProgDone) return;
+      if (!engineReady) {
+        subEl.textContent  = 'Finalizing';
+        statEl.textContent = 'Engine loading...';
+        return; // will be called again when engine signals ready
+      }
+      flashTransition(() => showScreen('screen-mode'));
     }
 
-    function custom_postrun(){
-        // python main and no VFS filesystem yet.
-        console.log(__FILE__, "custom_postrun")
-
+    // Poll for CHESS_ENGINE_READY (set by Python in main.py)
+    function pollEngine() {
+      if (window.CHESS_ENGINE_READY) {
+        engineReady = true;
+        maybeShowMode();
+      } else {
+        setTimeout(pollEngine, 200);
+      }
     }
 
-    function debug() {
-        // allow to gain access to dev tools from js console
-        // but only on desktop. difficult to reach when in iframe
-        python.config.debug = true
-        custom_onload(false)
-        Module.PyRun_SimpleString("shell.uptime()")
-        window_resize()
+    setTimeout(runStep,  800);
+    setTimeout(pollEngine, 500);
+
+    /* ── Screen transitions ──────────────────────────────────────────── */
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.add('exit');
+        setTimeout(() => s.classList.remove('exit'), 450);
+      });
+      setTimeout(() => {
+        const t = document.getElementById(id);
+        t.classList.remove('exit');
+        t.classList.add('active');
+      }, 80);
     }
 
-    function info_inline(data){
-        document.getElementById("info").innerHTML = data
+    function flashTransition(cb) {
+      const f = document.getElementById('flash');
+      f.style.transition = 'opacity 0.2s ease';
+      f.style.opacity = '0.1';
+      setTimeout(() => { f.style.opacity = '0'; cb(); }, 250);
     }
 
-    function info_online(url) {
-        // display info about current APK
-        fetch( url /*, options */)
-            .then((response) => response.text())
-            .then((html) => {
-                info_inline(html);
-        })
-        .catch((error) => {
-            console.warn(error);
-        });
+    /* ── Mode selection ──────────────────────────────────────────────── */
+    function selectMode(mode) {
+      selectedMode = mode;
+      if (mode === 'hva') {
+        showScreen('screen-side');
+      } else {
+        const labels = { hvh:'Human vs Human', ava:'AI vs AI' };
+        const icons  = { hvh:'♞', ava:'⚙' };
+        document.getElementById('ready-icon').textContent  = icons[mode];
+        document.getElementById('ready-title').textContent = labels[mode];
+        document.getElementById('ready-detail').textContent = 'Press Begin to start';
+        selectedSide = null;
+        showScreen('screen-ready');
+      }
     }
 
-    function frame_online(url) {
-        window.frames["iframe"].location = url;
+    function selectSide(side) {
+      selectedSide = side;
+      document.getElementById('ready-icon').textContent  = side === 'white' ? '♔' : '♚';
+      document.getElementById('ready-title').textContent = 'Ready';
+      document.getElementById('ready-detail').textContent =
+        'Human vs AI · ' + (side === 'white' ? 'White' : 'Black') + ' pieces';
+      showScreen('screen-ready');
     }
 
-    </script>
+    function goBack() { showScreen('screen-mode'); }
+
+    /* ── Start game ──────────────────────────────────────────────────── */
+    function startGame() {
+      // Derive player_one / player_two from selections
+      let p1, p2;
+      if (selectedMode === 'hva') {
+        p1 = selectedSide !== 'black';   // true = white human
+        p2 = selectedSide === 'black';   // true = black human
+      } else if (selectedMode === 'hvh') {
+        p1 = true; p2 = true;
+      } else {
+        p1 = false; p2 = false;   // AI vs AI
+      }
+
+      // Strings are unambiguous across the JS→Python bridge
+      window.CHESS_P1    = p1 ? "1" : "0";
+      window.CHESS_P2    = p2 ? "1" : "0";
+      window.CHESS_READY = "1";
+
+      // Deactivate all screens — removes pointer-events:all so clicks reach canvas
+      document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.classList.remove('exit');
+      });
+
+      const overlay = document.getElementById('ui-overlay');
+      overlay.classList.add('hidden');
+    }
+
+    /* ── Keyboard ────────────────────────────────────────────────────── */
+    document.addEventListener('keydown', e => {
+      if (e.key.toUpperCase() === 'R') {
+        window.location.reload();
+      }
+    });
+
+  </script>
 
 </body>
 </html>
